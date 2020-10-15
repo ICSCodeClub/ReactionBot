@@ -1,6 +1,7 @@
 Token: <TOKEN>
 Use Reactions: True
 Recognition Threshold: 0.2
+Minimum Word Length: 2
 Minimum Emotes: 2
 Maximum Emotes: 5
 Aliases:

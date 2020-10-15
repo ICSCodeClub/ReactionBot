@@ -18,6 +18,7 @@ with open('./config.yml') as file:
         config['aliases'] = yml['Aliases']
         config['thresh'] = float(yml['Recognition Threshold'])
         config['limits'] = (int(yml['Minimum Emotes']), int(yml['Maximum Emotes']))
+        config['min'] = int(config['Minimum Word Length'])
     except (KeyError, ValueError): 
         print('Error in config')
         quit(1)
@@ -50,15 +51,17 @@ async def on_message(message):
     found_ems = list()
     
     for nouns in nlp_analysis.get_noun_phrases(text):
+        if len(nouns) < config['min']: continue
         dist = nlp_analysis.get_min_edit_distance(nouns, emoji_list, length_dependant=True)
         if dist[1] <= config['thresh']: 
             found_ems.append(dist[0])
         else:
             for word in nouns.split(' '):
+                if len(nouns) < config['min']: continue
                 dist = nlp_analysis.get_min_edit_distance(word, emoji_list, length_dependant=True)
                 if dist[1] <= config['thresh']: found_ems.append(dist[0])
 
-    print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))
+    if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))
 
     if config['limits'][0] <= len(found_ems) <= config['limits'][1]:
         msg = ''
