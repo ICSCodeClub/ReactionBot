@@ -10,13 +10,14 @@ except ImportError: from yaml import Loader
 
 # load the config
 config = dict()
-with open('./config-actual.yml') as file:
+with open('./config.yml') as file:
     yml = yaml.load(file.read(), Loader=Loader)
     try:
         config['token'] = yml['Token']
         config['reactions'] = yml['Use Reactions']
         config['aliases'] = yml['Aliases']
-    except KeyError: 
+        config['thresh'] = float(yml['Recognition Threshold'])
+    except (KeyError, ValueError): 
         print('Error in config')
         quit(1)
     assert '<TOKEN>' not in repr(config), 'Please add your token to the config!'
@@ -49,12 +50,12 @@ async def on_message(message):
     
     for nouns in nlp_analysis.get_noun_phrases(text):
         dist = nlp_analysis.get_min_edit_distance(nouns, emoji_list, length_dependant=True)
-        if dist[1] <= 0.2: 
+        if dist[1] <= config['thresh']: 
             found_ems.append(dist[0])
         else:
             for word in nouns.split(' '):
                 dist = nlp_analysis.get_min_edit_distance(word, emoji_list, length_dependant=True)
-                if dist[1] <= 0.2: found_ems.append(dist[0])
+                if dist[1] <= config['thresh']: found_ems.append(dist[0])
 
     print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))
 
