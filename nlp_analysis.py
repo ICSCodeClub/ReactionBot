@@ -68,7 +68,7 @@ def get_min_distance(w, lst):
     return best
 
 def process_string(s):
-    s = str(s).lower()
+    s = stemmer.stem(str(s).lower())
     if s.endswith('es'): s = s[0:len(s)-2]
     elif s.endswith('s'): s = s[0:len(s)-1]
     return s
