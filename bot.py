@@ -17,6 +17,7 @@ with open('./config.yml') as file:
         config['reactions'] = yml['Use Reactions']
         config['aliases'] = yml['Aliases']
         config['thresh'] = float(yml['Recognition Threshold'])
+        config['limits'] = (int(yml['Minimum Emotes']), int(yml['Maximum Emotes']))
     except (KeyError, ValueError): 
         print('Error in config')
         quit(1)
@@ -59,7 +60,7 @@ async def on_message(message):
 
     print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))
 
-    if len(found_ems) < 5:
+    if config['limits'][0] <= len(found_ems) <= config['limits'][1]:
         msg = ''
         for em in found_ems:
             if ':{0}:'.format(em.replace(' ','_')) in emoji_dict:
