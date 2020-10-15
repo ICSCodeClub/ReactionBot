@@ -1,0 +1,5 @@
+discord.py
+requests
+nltk
+emojis
+pyyaml
