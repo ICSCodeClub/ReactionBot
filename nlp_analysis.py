@@ -67,7 +67,13 @@ def get_min_distance(w, lst):
         if dst[0] < best[1][0]: best = (lst[i], dst)
     return best
 
-def get_min_edit_distance(string, iterable, length_dependant:bool=True, preprocess=lambda s: s.lower()):
+def process_string(s):
+    s = str(s).lower()
+    if s.endswith('es'): s = s[0:len(s)-2]
+    elif s.endswith('s'): s = s[0:len(s)-1]
+    return s
+
+def get_min_edit_distance(string, iterable, length_dependant:bool=True, preprocess=process_string):
     string = preprocess(string)
     iterable = list(filter(lambda x: x != None, iterable))
     distances = sorted({s : nltk.edit_distance(string, preprocess(s)) / (max(len(preprocess(s)),0.01) if length_dependant else 1) for s in iterable}.items(), key=lambda i: i[1])
