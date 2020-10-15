@@ -73,9 +73,9 @@ async def on_message(message):
                         if server_emote.name.lower() != em.lower(): continue
                         await message.add_reaction(server_emote)
                         break
-                else: msg = '{0}{1}'.format(msg, ':{0}:'.format(em))
+                else: msg += str(discord.utils.get(bot.emojis, name=em))
         if not config['reactions']:
-            await message.guild.send(msg)
+            await message.channel.send(msg)
 
 bot.run(config['token'])
 
