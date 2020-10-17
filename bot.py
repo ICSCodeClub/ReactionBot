@@ -54,18 +54,21 @@ async def on_message(message):
         if len(nouns) < config['min']: continue
         dist = nlp_analysis.get_min_distance(nouns, emoji_list)
         if dist[1] <= config['thresh']: 
-            found_ems.append(dist[0])
-        else:
-            for word in nouns.split(' '):
-                if len(nouns) < config['min']: continue
-                dist = nlp_analysis.get_min_distance(word, emoji_list)
-                if dist[1] <= config['thresh']: found_ems.append(dist[0])
+            found_ems.append((nouns,)+dist)
+            text = text.replace(nouns,'') # more duplicate prevention
+    for word in text.split(' '):
+        if len(nouns) < config['min']: continue
+        dist = nlp_analysis.get_min_distance(word, emoji_list)
+        if dist[1] <= config['thresh']: found_ems.append((word,)+dist)
 
-    if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))
+    # remove duplicates
+    found_ems = list(dict.fromkeys(found_ems))
+    if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), message.content, found_ems))
 
     if config['limits'][0] <= len(found_ems) <= config['limits'][1]:
         msg = ''
         for em in found_ems:
+            em = em[1]
             if ':{0}:'.format(em.replace(' ','_')) in emoji_dict:
                 em = emoji_dict[':{0}:'.format(em.replace(' ','_'))]
                 if config['reactions']: await message.add_reaction(em)

@@ -81,7 +81,8 @@ def get_min_distance(w, lst, preprocess=process_string):
     for lw in lst:
         dist = get_distance(w, lw)
         if not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset) or not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset): 
-            dist = [nltk.edit_distance(p_w, preprocess(lw))/len(w)]
+            if len(w) > 0: dist = [nltk.edit_distance(p_w, preprocess(lw))/len(w)]
+            else: continue
         if dist[0] < best[1]: best = (lw, dist[0])
     if best[0] == None: return (lst[0], 1)
     return best
