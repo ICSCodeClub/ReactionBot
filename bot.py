@@ -10,7 +10,7 @@ except ImportError: from yaml import Loader
 
 # load the config
 config = dict()
-with open('./config.yml') as file:
+with open('./config-actual.yml') as file:
     yml = yaml.load(file.read(), Loader=Loader)
     try:
         config['token'] = yml['Token']
@@ -52,13 +52,13 @@ async def on_message(message):
     
     for nouns in nlp_analysis.get_noun_phrases(text):
         if len(nouns) < config['min']: continue
-        dist = nlp_analysis.get_min_edit_distance(nouns, emoji_list, length_dependant=True)
+        dist = nlp_analysis.get_min_distance(nouns, emoji_list)
         if dist[1] <= config['thresh']: 
             found_ems.append(dist[0])
         else:
             for word in nouns.split(' '):
                 if len(nouns) < config['min']: continue
-                dist = nlp_analysis.get_min_edit_distance(word, emoji_list, length_dependant=True)
+                dist = nlp_analysis.get_min_distance(word, emoji_list)
                 if dist[1] <= config['thresh']: found_ems.append(dist[0])
 
     if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), text, found_ems))

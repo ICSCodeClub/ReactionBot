@@ -54,24 +54,37 @@ def get_distance(w1, w2):
     for word1, word2 in itertools.product(w1, w2):
         syns1 = wordnet.synsets(word1)
         syns2 = wordnet.synsets(word2)
+        if len(syns1) * len(syns2) == 0: continue
         for sense1, sense2 in itertools.product(syns1, syns2):
             d = wordnet.wup_similarity(sense1, sense2)
-            sims.append((d, syns1, syns2))
-    return max(sims, key=lambda x: x[0])
+            if d == None: d = 0
+            sims.append((1-d, sense1, sense2))
+    if len(sims) <= 0: return (0, None, None)
+    return min(sims, key=lambda x: x[0])
 
-def get_min_distance(w, lst):
+def get_min_lingual_distance(w, lst):
+    if not isinstance(lst, list): lst = [lst]
     if len(lst) <= 0: return w
-    best = (lst[0], get_distance(w, lst[0]))
+    best = (lst[0], get_distance(w, lst[0])[0])
     for i in range(1,len(lst)):
         dst = get_distance(w, lst[i])
-        if dst[0] < best[1][0]: best = (lst[i], dst)
+        if dst[0] < best[1]: best = (lst[i], dst[0])
     return best
 
 def process_string(s):
-    s = stemmer.stem(str(s).lower())
-    if s.endswith('es'): s = s[0:len(s)-2]
-    elif s.endswith('s'): s = s[0:len(s)-1]
+    s = stemmer.stem(str(s).lower().strip().strip(':').strip())
     return s
+
+def get_min_distance(w, lst, preprocess=process_string):
+    p_w = preprocess(w)
+    best = (None, 1)
+    for lw in lst:
+        dist = get_distance(w, lw)
+        if not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset) or not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset): 
+            dist = [nltk.edit_distance(p_w, preprocess(lw))/len(w)]
+        if dist[0] < best[1]: best = (lw, dist[0])
+    if best[0] == None: return (lst[0], 1)
+    return best
 
 def get_min_edit_distance(string, iterable, length_dependant:bool=True, preprocess=process_string):
     string = preprocess(string)
@@ -79,3 +92,6 @@ def get_min_edit_distance(string, iterable, length_dependant:bool=True, preproce
     distances = sorted({s : nltk.edit_distance(string, preprocess(s)) / (max(len(preprocess(s)),0.01) if length_dependant else 1) for s in iterable}.items(), key=lambda i: i[1])
     if len(distances) > 0: return tuple(distances[0])
     return (string, 0)
+
+if __name__ == "__main__":
+    print(get_min_distance('snake',['dab','es','spain']))
