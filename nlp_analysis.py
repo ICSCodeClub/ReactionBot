@@ -52,8 +52,8 @@ def get_distance(w1, w2):
     if not isinstance(w2, list): w2 = [w2]
     sims = list()
     for word1, word2 in itertools.product(w1, w2):
-        syns1 = wordnet.synsets(word1)
-        syns2 = wordnet.synsets(word2)
+        syns1 = list(filter(lambda sn: 2 >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word1)))
+        syns2 = list(filter(lambda sn: 2 >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word2)))
         if len(syns1) * len(syns2) == 0: continue
         for sense1, sense2 in itertools.product(syns1, syns2):
             d = wordnet.wup_similarity(sense1, sense2)
