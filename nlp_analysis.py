@@ -46,14 +46,14 @@ def get_noun_phrases(text):
         phrases = [" ".join(term) for term in terms]
         return phrases
 
-def get_distance(w1, w2):
+def get_distance(w1, w2, nouns_only:bool = False, def_cutoff:int = 2):
     # https://stackoverflow.com/questions/30829382/check-the-similarity-between-two-words-with-nltk-with-python
     if not isinstance(w1, list): w1 = [w1]
     if not isinstance(w2, list): w2 = [w2]
-    sims = list()
+    sims = list(); kwargs = {'pos': wordnet.NOUN} if nouns_only else {}
     for word1, word2 in itertools.product(w1, w2):
-        syns1 = list(filter(lambda sn: 2 >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word1)))
-        syns2 = list(filter(lambda sn: 2 >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word2)))
+        syns1 = list(filter(lambda sn: def_cutoff >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word1, **kwargs)))
+        syns2 = list(filter(lambda sn: def_cutoff >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word2, **kwargs)))
         if len(syns1) * len(syns2) == 0: continue
         for sense1, sense2 in itertools.product(syns1, syns2):
             d = wordnet.wup_similarity(sense1, sense2)
@@ -69,6 +69,9 @@ def get_min_lingual_distance(w, lst):
     for i in range(1,len(lst)):
         dst = get_distance(w, lst[i])
         if dst[0] < best[1]: best = (lst[i], dst[0])
+        elif dst[0] == best[1]: # if the distance is the same (most often 0 and 0)...
+            # if edit distance is less, that's the better option
+            if nltk.edit_distance(best[0], w)/max(len(best[0]),1) > nltk.edit_distance(lst[i], w)/max(len(lst[i]),1): best = (lst[i], dst[0]) 
     return best
 
 def process_string(s):
