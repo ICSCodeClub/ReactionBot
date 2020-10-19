@@ -48,8 +48,10 @@ async def on_message(message):
     text = re.sub(r'\s+',' ', re.sub(r':.*:','', emojis.decode(message.content)).replace('\n',' '))
     # list all emojis
     emoji_list = [str(em).strip(':').replace('_',' ') for em in itertools.chain([x.name for x in message.guild.emojis], emoji_dict.keys())]
-    found_ems = list()
     
+    # detect all reactions
+    found_ems = list()
+
     for nouns in nlp_analysis.get_noun_phrases(text):
         if len(nouns) < config['min']: continue
         dist = nlp_analysis.get_min_distance(nouns, emoji_list)
@@ -57,14 +59,21 @@ async def on_message(message):
             found_ems.append((nouns,)+dist)
             text = text.replace(nouns,'') # more duplicate prevention
     for word in text.split(' '):
-        if len(nouns) < config['min']: continue
+        if len(word) < config['min']: continue
         dist = nlp_analysis.get_min_distance(word, emoji_list)
         if dist[1] <= config['thresh']: found_ems.append((word,)+dist)
 
     # remove duplicates
-    found_ems = list(dict.fromkeys(found_ems))
-    if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), message.content, found_ems))
+    i = len(found_ems)-1
+    while i >= 0:
+        if found_ems[i][1] in [found_ems[x][1] for x in range(len(found_ems)) if x != i]:
+            found_ems.pop(i)
+        i -= 1
+    
+    # print emojis found
+    if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), str(message.content).replace('\n',' '), found_ems))
 
+    # add the reactions
     if config['limits'][0] <= len(found_ems) <= config['limits'][1]:
         msg = ''
         for em in found_ems:
@@ -84,4 +93,3 @@ async def on_message(message):
             await message.channel.send(msg)
 
 bot.run(config['token'])
-
