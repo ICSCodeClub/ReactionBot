@@ -3,6 +3,8 @@ import itertools
 
 # silently grab all nltk dependencies
 nltk.download('wordnet', quiet=True)
+nltk.download('punkt', quiet=True)
+nltk.download('universal_tagset', quiet=True)
 nltk.download('averaged_perceptron_tagger', quiet=True)
 
 from requests.exceptions import HTTPError
@@ -46,14 +48,36 @@ def get_noun_phrases(text):
         phrases = [" ".join(term) for term in terms]
         return phrases
 
-def get_distance(w1, w2, nouns_only:bool = False, def_cutoff:int = 2):
+def get_wordnet_pos(tag):
+    if tag.startswith('ADJ'):
+        return wordnet.ADJ
+    elif tag.startswith('VERB'):
+        return wordnet.VERB
+    elif tag.startswith('NOUN'):
+        return wordnet.NOUN
+    elif tag.startswith('ADV'):
+        return wordnet.ADV
+    elif tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else: return None
+
+def tag_pos(phrase):
+    return [(x[0], get_wordnet_pos(x[1])) for x in nltk.tag.pos_tag(nltk.tokenize.word_tokenize(phrase)) if x[1] not in ('.','DET')]
+
+def get_distance(w1, w2, pos = None, def_cutoff:int = 2):
     # https://stackoverflow.com/questions/30829382/check-the-similarity-between-two-words-with-nltk-with-python
     if not isinstance(w1, list): w1 = [w1]
     if not isinstance(w2, list): w2 = [w2]
-    sims = list(); kwargs = {'pos': wordnet.NOUN} if nouns_only else {}
+    sims = list(); kwargs = {'pos': pos} if pos else {}
     for word1, word2 in itertools.product(w1, w2):
-        syns1 = list(filter(lambda sn: def_cutoff >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word1, **kwargs)))
-        syns2 = list(filter(lambda sn: def_cutoff >= int(''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word2, **kwargs)))
+        syns1 = list(filter(lambda sn: def_cutoff >= int('0'+''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word1, **kwargs)))
+        syns2 = list(filter(lambda sn: def_cutoff >= int('0'+''.join(x for x in repr(sn) if x.isdigit())), wordnet.synsets(word2, **kwargs)))
         if len(syns1) * len(syns2) == 0: continue
         for sense1, sense2 in itertools.product(syns1, syns2):
             d = wordnet.wup_similarity(sense1, sense2)
@@ -62,12 +86,12 @@ def get_distance(w1, w2, nouns_only:bool = False, def_cutoff:int = 2):
     if len(sims) <= 0: return (0, None, None)
     return min(sims, key=lambda x: x[0])
 
-def get_min_lingual_distance(w, lst):
+def get_min_lingual_distance(w, lst, pos=None):
     if not isinstance(lst, list): lst = [lst]
     if len(lst) <= 0: return w
-    best = (lst[0], get_distance(w, lst[0])[0])
+    best = (lst[0], get_distance(w, lst[0],pos=pos)[0])
     for i in range(1,len(lst)):
-        dst = get_distance(w, lst[i])
+        dst = get_distance(w, lst[i], pos=pos)
         if dst[0] < best[1]: best = (lst[i], dst[0])
         elif dst[0] == best[1]: # if the distance is the same (most often 0 and 0)...
             # if edit distance is less, that's the better option
@@ -78,13 +102,13 @@ def process_string(s):
     s = stemmer.stem(str(s).lower().strip().strip(':').strip())
     return s
 
-def get_min_distance(w, lst, preprocess=process_string):
+def get_min_distance(w, lst, preprocess=process_string, pos=None):
     p_w = preprocess(w)
     best = (None, 1)
     for lw in lst:
-        dist = get_distance(w, lw)
+        dist = get_distance(w, lw, pos=pos)
         if not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset) or not isinstance(dist[1], nltk.corpus.reader.wordnet.Synset): 
-            if len(w) > 0: dist = [nltk.edit_distance(p_w, preprocess(lw))/len(w)]
+            if len(w) > 0: dist = [nltk.edit_distance(p_w, preprocess(lw))/len(lw)]
             else: continue
         if dist[0] < best[1]: best = (lw, dist[0])
     if best[0] == None: return (lst[0], 1)
@@ -99,3 +123,4 @@ def get_min_edit_distance(string, iterable, length_dependant:bool=True, preproce
 
 if __name__ == "__main__":
     print(get_min_distance('snake',['dab','es','spain']))
+    print(tag_pos('I stop my heartbeat when I see myself in what these women do'))

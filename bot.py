@@ -58,9 +58,10 @@ async def on_message(message):
         if dist[1] <= config['thresh']: 
             found_ems.append((nouns,)+dist)
             text = text.replace(nouns,'') # more duplicate prevention
-    for word in text.split(' '):
+    for word, pos in nlp_analysis.tag_pos(text):
         if len(word) < config['min']: continue
-        dist = nlp_analysis.get_min_distance(word, emoji_list)
+        if pos == None: continue # force part of speech detection
+        dist = nlp_analysis.get_min_distance(word, emoji_list,pos=pos)
         if dist[1] <= config['thresh']: found_ems.append((word,)+dist)
 
     # remove duplicates
