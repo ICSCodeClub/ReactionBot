@@ -73,6 +73,9 @@ async def on_message(message):
             found_ems.pop(i)
         i -= 1
     
+    # reorganize
+    found_ems = sorted(found_ems, key=lambda x: message.content.lower().find(x[0].lower()) if x[0].lower() in message.content.lower() else 100000)
+    
     # print emojis found
     if len(found_ems) > 0: print('Found {0} emojis in message "{1}": {2}'.format(len(found_ems), str(message.content).replace('\n',' '), found_ems))
 
