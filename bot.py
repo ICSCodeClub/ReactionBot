@@ -19,6 +19,7 @@ with open('./config.yml') as file:
         config['thresh'] = float(yml['Recognition Threshold'])
         config['limits'] = (int(yml['Minimum Emotes']), int(yml['Maximum Emotes']))
         config['min'] = int(yml['Minimum Word Length'])
+        config['nouns'] = bool(yml['Force Nouns'])
     except (KeyError, ValueError): 
         print('Error in config')
         quit(1)
@@ -61,6 +62,7 @@ async def on_message(message):
     for word, pos in nlp_analysis.tag_pos(text):
         if len(word) < config['min']: continue
         if pos == None: continue # force part of speech detection
+        if config['nouns'] and pos != 'n': continue
         dist = nlp_analysis.get_min_distance(word, emoji_list,pos=pos)
         if dist[1] <= config['thresh']: found_ems.append((word,)+dist)
 
